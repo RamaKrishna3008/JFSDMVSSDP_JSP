@@ -1,22 +1,32 @@
+<%@page import="com.klef.jfsd.springboot.model.CartItem"%>
+<%@ page import="java.util.List" %>
 <%@ page import="com.klef.jfsd.springboot.model.Customer" %>
+
 <%
     Customer c = (Customer) session.getAttribute("customer");
     if (c == null) {
         response.sendRedirect("sessionexpiry");
         return;
     }
+    
+    List<CartItem> cart = (List<CartItem>) session.getAttribute("cart");
+    String productIds = "";
+    if (cart != null && !cart.isEmpty()) {
+        productIds = String.join(",", cart.stream().map(item -> String.valueOf(item.getId())).toArray(String[]::new));
+    }
 %>
+
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script">
-    <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="ecommerce.png">
-    <title>ShopEasy - Payment</title>
+    <title>Payment - ShopEasy</title>
     <style>
         :root {
             --gpay-background: #1f1f1f;
@@ -27,6 +37,9 @@
             --gpay-border: #5f6368;
             --gpay-hover: #3367d6;
             --gpay-shadow: rgba(0, 0, 0, 0.2);
+            --gpay-success: #34A853;
+            --gpay-error: #EA4335;
+            --gpay-warning: #FBBC05;
         }
 
         [data-theme="light"] {
@@ -39,290 +52,348 @@
         }
 
         body {
-            background-color: var(--gpay-background);
             font-family: 'Google Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--gpay-background);
             color: var(--gpay-text);
-            min-height: 100vh;
             transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background-color: var(--gpay-surface);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px var(--gpay-shadow);
+            border: none;
+            margin-bottom: 30px;
+        }
+
+        .card-header {
+            background-color: var(--gpay-primary);
+            padding: 20px;
+            border-bottom: none;
+        }
+
+        .card-header h3 {
+            color: white;
+            margin: 0;
+            font-weight: 500;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .card-body {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--gpay-text);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: var(--gpay-surface);
+            border: 1px solid var(--gpay-border);
+            border-radius: 8px;
+            color: var(--gpay-text);
+            font-family: 'Google Sans', sans-serif;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--gpay-primary);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+
+        .form-control:disabled, .form-control[readonly] {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-color: var(--gpay-border);
+            color: var(--gpay-secondary-text);
+        }
+
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 12px 24px;
+            font-size: 16px;
+            line-height: 1.5;
+            border-radius: 24px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-family: 'Google Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background-color: var(--gpay-primary);
+            border-color: var(--gpay-primary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--gpay-hover);
+            border-color: var(--gpay-hover);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Payment summary section */
+        .payment-summary {
+            background-color: rgba(66, 133, 244, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .payment-summary h4 {
+            margin-top: 0;
+            color: var(--gpay-text);
+            font-weight: 500;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .summary-row:last-child {
+            margin-bottom: 0;
+            padding-top: 10px;
+            border-top: 1px solid var(--gpay-border);
+            font-weight: 500;
         }
 
         .theme-toggle {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 12px 24px;
-            background-color: var(--gpay-primary);
-            color: white;
-            border: none;
-            border-radius: 24px;
+            background-color: var(--gpay-surface);
+            border: 1px solid var(--gpay-border);
+            color: var(--gpay-text);
+            padding: 8px 16px;
+            border-radius: 20px;
             cursor: pointer;
-            font-family: 'Google Sans', sans-serif;
-            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
             transition: all 0.3s ease;
             box-shadow: 0 2px 4px var(--gpay-shadow);
             z-index: 1000;
         }
 
         .theme-toggle:hover {
-            background-color: var(--gpay-hover);
-            transform: translateY(-1px);
             box-shadow: 0 4px 8px var(--gpay-shadow);
         }
 
-        .payment-container {
+        /* Secure payment badge */
+        .secure-payment {
             display: flex;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .payment-card {
-            width: 100%;
-            max-width: 500px;
-            background-color: var(--gpay-surface);
-            box-shadow: 0 4px 6px var(--gpay-shadow);
-            border: 1px solid var(--gpay-border);
-            border-radius: 28px;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card-header {
-            background-color: var(--gpay-surface);
-            border-bottom: 1px solid var(--gpay-border);
-            border-top-left-radius: 28px !important;
-            border-top-right-radius: 28px !important;
-            padding: 24px;
-            transition: background-color 0.3s ease;
-        }
-
-        .card-header h3 {
-            margin: 0;
-            font-weight: 500;
-            font-size: 24px;
-            color: var(--gpay-text);
-            transition: color 0.3s ease;
-        }
-
-        .card-body {
-            padding: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group label {
-            font-weight: 500;
+            justify-content: center;
+            margin-top: 20px;
             color: var(--gpay-secondary-text);
-            margin-bottom: 8px;
             font-size: 14px;
-            transition: color 0.3s ease;
         }
 
-        .form-control {
-            background-color: var(--gpay-background);
-            border: 1px solid var(--gpay-border);
-            color: var(--gpay-text);
-            border-radius: 12px;
-            padding: 12px;
-            height: auto;
-            transition: all 0.3s ease;
+        .secure-payment i {
+            margin-right: 8px;
+            color: var(--gpay-success);
         }
 
-        .form-control:focus {
-            background-color: var(--gpay-background);
-            border-color: var(--gpay-primary);
-            color: var(--gpay-text);
-            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
-        }
-
-        .form-control[readonly] {
-            background-color: var(--gpay-background);
-            opacity: 0.8;
-        }
-
-        .input-group-text {
-            background-color: var(--gpay-background);
-            border: 1px solid var(--gpay-border);
-            color: var(--gpay-secondary-text);
-            border-radius: 12px 0 0 12px;
-            transition: all 0.3s ease;
-        }
-
-        #razorpaypayment {
-            background-color: var(--gpay-primary);
-            border: none;
-            border-radius: 24px;
-            padding: 12px 24px;
-            font-weight: 500;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: white;
-            width: 100%;
-        }
-
-        #razorpaypayment:hover {
-            background-color: var(--gpay-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px var(--gpay-shadow);
-        }
-
-        .input-group .form-control {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-        }
-
-        @media screen and (max-width: 768px) {
-            .theme-toggle {
-                top: 10px;
-                right: 10px;
-                padding: 8px 16px;
-                font-size: 12px;
+        /* Animation for pay button */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
             }
-
-            .payment-card {
-                margin: 10px;
+            50% {
+                transform: scale(1.05);
             }
-
-            .card-header {
-                padding: 16px;
+            100% {
+                transform: scale(1);
             }
+        }
 
+        .btn-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+                margin: 20px auto;
+            }
+            
             .card-body {
-                padding: 16px;
+                padding: 20px;
             }
         }
     </style>
 </head>
 <body>
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Theme">
-        <span id="theme-icon">☽</span>
-    </button>
 
-    <div class="container payment-container">
-        <div class="card payment-card">
-            <div class="card-header">
-                <h3 class="text-center">Complete Your Payment</h3>
+<jsp:include page="Customersidenavbar.jsp"></jsp:include>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3>Complete Your Payment</h3>
+        </div>
+        <div class="card-body">
+            <div class="payment-summary">
+                <h4>Order Summary</h4>
+                <div class="summary-row">
+                    <span>Products</span>
+                    <span><%= cart != null ? cart.size() : 0 %> items</span>
+                </div>
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>Rs <%= request.getParameter("amount") %></span>
+                </div>
+                <div class="summary-row">
+                    <span>Shipping</span>
+                    <span>Free</span>
+                </div>
+                <div class="summary-row">
+                    <span>Total</span>
+                    <span>Rs <%= request.getParameter("amount") %></span>
+                </div>
             </div>
-            <div class="card-body">
-                <form id="orderForm">
-                    <div class="form-group">
-                        <label for="customerId">Customer ID</label>
-                        <input type="number" id="customerId" class="form-control" value="<%= c.getId() %>" readonly>
-                    </div>
-                    <input type="hidden" id="orderStatus" value="pending">
-                    <div class="form-group">
-                        <label for="amount">Payment Amount</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">Rs</span>
-                            </div>
-                            <input type="text" id="amount" class="form-control" value="${amount}" readonly>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Customer Email</label>
-                        <input type="email" id="email" class="form-control" value="<%= c.getEmail() %>" readonly>
-                    </div>
-                    <input type="hidden" id="razorpayOrderId" value="">
-                    <button type="button" id="razorpaypayment" class="btn btn-primary">Pay Now</button>
-                </form>
+            
+            <form id="orderForm">
+                <input type="hidden" id="customerId" value="<%= c.getId() %>">
+                <input type="hidden" id="productIds" value="<%= productIds %>">
+                <input type="hidden" id="orderStatus" value="pending">
+                <div class="form-group">
+                    <label for="amount">Amount to Pay</label>
+                    <input type="text" id="amount" class="form-control" value="<%= request.getParameter("amount") %>" readonly>
+                </div>
+                <button type="button" id="razorpaypayment" class="btn btn-primary btn-pulse">
+                    <i class="fas fa-lock" style="margin-right: 8px;"></i>Pay Securely
+                </button>
+            </form>
+            
+            <div class="secure-payment">
+                <i class="fas fa-shield-alt"></i>
+                <span>Secure payment processed by Razorpay</span>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Theme toggle functionality
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            
-            const themeIcon = document.getElementById("theme-icon");
-            themeIcon.textContent = newTheme === 'dark' ? 'light' : 'dark';
-        }
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+$(document).ready(function () {
+    $('#razorpaypayment').on('click', function () {
+        console.log("Initiating Payment...");
 
-        // Set initial theme
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            const themeIcon = document.getElementById("theme-icon");
-            themeIcon.textContent = savedTheme === 'dark' ? 'light' : 'dark';
-        });
+        const amount = parseFloat($('#amount').val().trim()) * 100; // Convert to paise
+        const customerId = $('#customerId').val();
+        const productIds = $('#productIds').val().split(",").map(id => id.trim());
 
-        // Razorpay payment functionality
-        $(document).ready(function () {
-            $('#razorpaypayment').on('click', function () {
-                const amount = parseFloat($('#amount').val());
-                const customerId = $('#customerId').val();
-                const email = $('#email').val();
+        $.ajax({
+            url: '/create-order',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ amount: amount, productIds: productIds }),
+            success: function (response) {
+                console.log("Order Created: ", response);
 
-                if (isNaN(amount) || amount <= 0) {
-                    alert('Invalid Amount');
+                if (!response.id_2) {
+                    alert("Order creation failed.");
                     return;
                 }
 
-                const amountInPaise = Math.round(amount * 100);
+                const options = {
+                    key: 'rzp_test_d3yeHrfHXiLZIN',
+                    amount: response.amount,
+                    currency: "INR",
+                    name: "ShopEasy",
+                    description: "Order Payment",
+                    order_id: response.id_2, 
+                    handler: function (razorpayResponse) {
+                        console.log("Razorpay Response: ", razorpayResponse);
 
-                $.ajax({
-                    url: '/create-order',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ amount: amount }),
-                    success: function (response) {
-                        $('#razorpayOrderId').val(response.id);
-
-                        const options = {
-                            key: 'rzp_test_d3yeHrfHXiLZIN',
-                            amount: amountInPaise,
-                            currency: "INR",
-                            name: "ShopEasy",
-                            description: `Order for Customer ${customerId}`,
-                            order_id: response.id,
-                            handler: function (response) {
-                                $.ajax({
-                                    url: '/savePayment',
-                                    method: 'POST',
-                                    contentType: 'application/json',
-                                    data: JSON.stringify({
-                                        razorpay_payment_id: response.razorpay_payment_id,
-                                        razorpay_order_id: response.razorpay_order_id,
-                                        razorpay_signature: response.razorpay_signature,
-                                        amount: amount,
-                                        customerId: customerId
-                                    }),
-                                    success: function () {
-                                        alert('Payment Successful!');
-                                        window.location.href = 'customerhome';
-                                    },
-                                    error: function () {
-                                        alert('Payment Failed');
-                                    }
-                                });
+                        $.ajax({
+                            url: '/savePayment',
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                                razorpay_order_id: razorpayResponse.razorpay_order_id,
+                                razorpay_signature: razorpayResponse.razorpay_signature,
+                                amount: amount / 100, 
+                                customerId: customerId,
+                                product_id: productIds
+                            }),
+                            success: function (data) {
+                                // Show success message with more style
+                                const successHtml = `
+                                    <div style="text-align: center; padding: 20px;">
+                                        <i class="fas fa-check-circle" style="font-size: 64px; color: var(--gpay-success); margin-bottom: 20px;"></i>
+                                        <h3>Payment Successful!</h3>
+                                        <p>Your order has been placed successfully.</p>
+                                        <button onclick="window.location.href='customerhome'" class="btn btn-primary" style="margin-top: 20px;">
+                                            Continue Shopping
+                                        </button>
+                                    </div>
+                                `;
+                                $(".card-body").html(successHtml);
+                                
+                                // Redirect after delay
+                                setTimeout(function() {
+                                    window.location.href = 'customerhome';
+                                }, 3000);
                             },
-                            prefill: { email: email },
-                            theme: { color: "#4285f4" }
-                        };
-
-                        const rzp = new Razorpay(options);
-                        rzp.open();
+                            error: function (xhr) {
+                                alert(xhr.responseText);
+                            }
+                        });
                     },
-                    error: function () {
-                        alert('Error creating order. Please try again.');
-                    }
-                });
-            });
+                    theme: { color: "#4285f4" }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+            },
+            error: function () {
+                alert("Error creating order.");
+            }
         });
-    </script>
+    });
+});
+
+
+</script>
+
 </body>
 </html>

@@ -12,9 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.klef.jfsd.springboot.model.Customer;
 import com.klef.jfsd.springboot.model.CustomerOrder;
 import com.klef.jfsd.springboot.model.Product;
 import com.klef.jfsd.springboot.repository.CustomerOrderRepository;
+import com.klef.jfsd.springboot.repository.CustomerRepository;
 import com.klef.jfsd.springboot.repository.ProductRepository;
 import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
@@ -29,6 +31,8 @@ public class ProductServiceImpl implements ProductService
 	
 	@Autowired
 	private CustomerOrderRepository orderRepository;
+	@Autowired
+	private CustomerRepository customerRepository;
 	
 	@Value("${razorpay.key.id}")
 	private String razorPayKey;
@@ -94,22 +98,6 @@ public class ProductServiceImpl implements ProductService
         return order;
     }
 
-    @Override
-    public boolean verifySignature(Map<String, String> paymentDetails) {
-        try {
-            String razorpayOrderId = paymentDetails.get("razorpay_order_id");
-            String razorpayPaymentId = paymentDetails.get("razorpay_payment_id");
-            String razorpaySignature = paymentDetails.get("razorpay_signature");
-
-            String data = razorpayOrderId + "|" + razorpayPaymentId;
-            String generatedSignature = generateSignature(data, razorPaySecret);
-
-            return generatedSignature.equals(razorpaySignature);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
 
     private String generateSignature(String data, String secretKey) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
@@ -136,5 +124,27 @@ public class ProductServiceImpl implements ProductService
             orderRepository.save(order);
         }
     }
-
+    @Override
+    public String updateCustomer(Customer customer)
+    {
+    	Customer c=customerRepository.findById(customer.getId()).get();
+    	c.setName(customer.getName());
+    	c.setAddress(customer.getAddress());
+    	c.setContactno(customer.getContactno());
+    	c.setPassword(customer.getPassword());
+    	customerRepository.save(c);
+    	return "Updated Successfully";
+    }
+    
+    @Override
+    public Customer viewCustomerById(int id)
+    {
+    	return customerRepository.findById(id).get();
+    }    
+    
+    @Override
+    public List<CustomerOrder> viewOrders(int customerid)
+    {
+    	return orderRepository.findByCustomerId(customerid);
+    }
 }

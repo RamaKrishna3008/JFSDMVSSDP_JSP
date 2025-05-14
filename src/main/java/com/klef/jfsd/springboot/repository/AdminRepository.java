@@ -1,5 +1,7 @@
 package com.klef.jfsd.springboot.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,5 +21,9 @@ public interface AdminRepository extends JpaRepository<Admin, String>
 	@Modifying
 	@Transactional
 	public int deleteempbydept(String contact);
+	
+	public List<Admin> findByUsername(String username);
+	
+	
 	
 }

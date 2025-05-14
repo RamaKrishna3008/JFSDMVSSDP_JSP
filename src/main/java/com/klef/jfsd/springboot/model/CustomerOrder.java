@@ -12,6 +12,7 @@ public class CustomerOrder
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int orderId;
 	private int customerId;
+	private int productid;
 	private String orderStatus;
 	private double amount;
 	public String email;
@@ -52,5 +53,11 @@ public class CustomerOrder
 	}
 	public void setEmail(String email) {
 		this.email = email;
+	}
+	public int getProductid() {
+		return productid;
+	}
+	public void setProductid(int productid) {
+		this.productid = productid;
 	}
 }

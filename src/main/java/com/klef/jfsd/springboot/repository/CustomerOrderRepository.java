@@ -12,4 +12,5 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, In
 {
 
 	public CustomerOrder findByRazorpayOrderId(String razorpayOrderId);
+	public List<CustomerOrder> findByCustomerId(int customerId);
 }

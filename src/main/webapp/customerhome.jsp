@@ -19,6 +19,7 @@ pageEncoding="ISO-8859-1" isELIgnored="false"%>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="ecommerce.png">
     <title>ShopEasy</title>
     <style>
@@ -45,36 +46,18 @@ pageEncoding="ISO-8859-1" isELIgnored="false"%>
         body {
             font-family: 'Google Sans', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: var(--gpay-background);
             color: var(--gpay-text);
-            line-height: 1.6;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 24px;
-            background-color: var(--gpay-primary);
-            color: white;
-            border: none;
-            border-radius: 24px;
-            cursor: pointer;
-            font-family: 'Google Sans', sans-serif;
-            font-weight: 500;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px var(--gpay-shadow);
-        }
 
-        .theme-toggle:hover {
-            background-color: var(--gpay-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px var(--gpay-shadow);
+        /* Modified content styles */
+        .content {
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         h3 {
@@ -176,7 +159,13 @@ pageEncoding="ISO-8859-1" isELIgnored="false"%>
             margin-bottom: 16px;
         }
 
-        .buy-button {
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .buy-button, .cart-button {
             display: inline-block;
             width: 100%;
             padding: 12px 0;
@@ -190,15 +179,148 @@ pageEncoding="ISO-8859-1" isELIgnored="false"%>
             letter-spacing: 0.5px;
             text-align: center;
             transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
         }
 
-        .buy-button:hover {
+        .buy-button:hover, .cart-button:hover {
             background-color: var(--gpay-hover);
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(66, 133, 244, 0.2);
         }
 
+        .cart-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--gpay-surface);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 16px var(--gpay-shadow);
+            width: 400px;
+            z-index: 200;
+        }
+
+        .cart-modal h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--gpay-text);
+        }
+
+        .cart-items {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--gpay-border);
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-item-remove {
+            background: transparent;
+            color: #ff5252;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .cart-item-remove:hover {
+            background-color: rgba(255, 82, 82, 0.1);
+        }
+
+        .cart-total {
+            text-align: right;
+            font-weight: 500;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .cart-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .cart-button-clear, .cart-button-checkout, .cart-button-close {
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        .cart-button-clear {
+            background-color: var(--gpay-surface);
+            color: var(--gpay-text);
+            border: 1px solid var(--gpay-border);
+        }
+
+        .cart-button-checkout {
+            background-color: var(--gpay-primary);
+            color: white;
+        }
+
+        .cart-button-close {
+            background-color: var(--gpay-surface);
+            color: var(--gpay-text);
+            border: 1px solid var(--gpay-border);
+        }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 199;
+        }
+
         @media screen and (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background-color: var(--gpay-surface);
+                flex-direction: column;
+                padding: 20px 0;
+                box-shadow: 0 4px 10px var(--gpay-shadow);
+            }
+
+            .nav-links.show {
+                display: flex;
+            }
+
+            .nav-links li {
+                margin: 5px 20px;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
             .product-grid {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
                 padding: 10px;
@@ -208,37 +330,49 @@ pageEncoding="ISO-8859-1" isELIgnored="false"%>
                 width: 90%;
             }
 
-            .theme-toggle {
-                top: 10px;
-                right: 10px;
-                padding: 8px 16px;
-                font-size: 12px;
+            .cart-modal {
+                width: 90%;
+                max-width: 350px;
             }
         }
     </style>
 </head>
 
 <body>
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Theme">
-        <span id="theme-icon">☽</span>
-    </button>
+    <jsp:include page="Customersidenavbar.jsp"></jsp:include>
 
-    <h3><u>View All Products</u></h3>
-    <input type="text" id="myInput" onkeyup="searchProducts()" placeholder="Search products...">
-    
-    <div class="product-grid" id="productGrid">
-        <c:forEach items="${productlist}" var="product">
-            <div class="product-card">
-                <img class="product-image" src='displayprodimage?id=${product.id}' alt="${product.name}">
-                <div class="product-info">
-                    <div class="product-category">${product.category}</div>
-                    <div class="product-name">${product.name}</div>
-                    <div class="product-description">${product.description}</div>
-                    <div class="product-price">Rs. ${product.cost}</div>
-                    <a href="PlaceOrder?amount=${product.cost}" class="buy-button">Buy Now</a>
+    <div class="content">
+        <h3><u>Welcome To ShopEasy</u></h3>
+        
+        <input type="text" id="myInput" onkeyup="searchProducts()" placeholder="Search products...">
+        
+        <div class="product-grid" id="productGrid">
+            <c:forEach items="${productlist}" var="product">
+                <div class="product-card">
+                    <img class="product-image" src='displayprodimage?id=${product.id}' alt="${product.name}">
+                    <div class="product-info">
+                        <div class="product-category">${product.category}</div>
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-description">${product.description}</div>
+                        <div class="product-price">Rs. ${product.cost}</div>
+                        <div class="button-group">
+                            <a href="/addToCart?id=${product.id}" class="cart-button">Add to Cart</a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </c:forEach>
+            </c:forEach>
+        </div>
+    </div>
+    
+    <div class="cart-modal" id="cartModal">
+        <h2>Your Cart</h2>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-total" id="cartTotal">Total: Rs. 0</div>
+        <div class="cart-buttons">
+            <button class="cart-button-clear" onclick="clearCart()">Clear Cart</button>
+            <button class="cart-button-checkout" onclick="checkout()">Checkout</button>
+            <button class="cart-button-close" onclick="hideCart()">Close</button>
+        </div>
     </div>
 
     <script>
@@ -261,22 +395,8 @@ pageEncoding="ISO-8859-1" isELIgnored="false"%>
                 }
             }
         }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            
-            const themeIcon = document.getElementById("theme-icon");
-            themeIcon.textContent = newTheme === 'dark' ? 'light' : 'dark';
-        }
-
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const themeIcon = document.getElementById("theme-icon");
-        themeIcon.textContent = savedTheme === 'dark' ? 'light' : 'dark';
+        
+        
     </script>
 </body>
 </html>
